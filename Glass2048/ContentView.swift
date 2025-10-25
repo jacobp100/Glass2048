@@ -183,14 +183,12 @@ struct ContentView: View {
 
                 guard let direction else { return }
 
-                var newTile: Game.Tile?
                 withAnimation(.easeOut(duration: 0.15)) {
-                    newTile = game.move(direction: direction)
-                }
+                    guard let newTile = game.move(direction: direction) else { return }
 
-                withAnimation(.linear(duration: 0.2).delay(0.10)) {
-                    guard let newTile else { return }
-                    game.append(tile: newTile)
+                    withAnimation(.linear(duration: 0.4).delay(0.1)) {
+                        game.append(tile: newTile)
+                    }
                 }
             }
     }
@@ -201,13 +199,15 @@ struct ContentView: View {
 
         GlassEffectContainer {
             Text(tile.value, format: .number)
+                .contentTransition(.numericText(value: Double(tile.value)))
                 .minimumScaleFactor(0.5)
                 .font(.system(size: 48, weight: .black, design: .rounded))
                 .foregroundStyle(.white)
-                .shadow(radius: 4)
-                .contentTransition(.numericText(value: Double(tile.value)))
+                .shadow(color: .black.opacity(0.125), radius: 0.5)
+                .shadow(color: .black.opacity(0.25), radius: 4)
                 .padding(4)
                 .frame(width: size, height: size)
+                .drawingGroup()
                 .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 24))
                 .glassEffectTransition(.materialize)
                 .glassEffectID(tile.id, in: namespace)
@@ -237,8 +237,8 @@ struct ContentView: View {
                 }
             }
             .font(.system(size: 24, weight: .black, design: .rounded))
-            .textCase(.uppercase)
             .foregroundStyle(.white)
+            .textCase(.uppercase)
 
             Spacer()
 
