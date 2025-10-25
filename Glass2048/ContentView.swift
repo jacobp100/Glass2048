@@ -57,15 +57,12 @@ struct Game {
         tiles.append(tile)
     }
 
-    private mutating func doMove(
-        position positionFunc: (Int, Int) -> Position,
-        reverse axisFunc: (Position) -> (Int, Int)
-    ) -> Tile? {
+    private mutating func doMove(position positionFunc: (Int, Int) -> Position) -> Tile? {
         var moved = false
         var tiles = [Tile]()
 
         for crossAxis in 0..<4 {
-            var skylineTileIndex: Int? = nil
+            var skylineTileMeta: (index: Int, axis: Int)? = nil
 
             for axis in 0..<4 {
                 let position = positionFunc(axis, crossAxis)
@@ -74,25 +71,16 @@ struct Game {
                     continue
                 }
 
-                let skylineTile: Tile? = if let skylineTileIndex {
-                    tiles[skylineTileIndex]
+                let skylineTile: Tile? = if let skylineTileMeta {
+                    tiles[skylineTileMeta.index]
                 } else {
                     nil
                 }
 
-                let nextAxis: Int = if let skylineTile {
-                    axisFunc(skylineTile.position).0 + 1
-                } else {
-                    0
-                }
-
-                let nextPosition = positionFunc(nextAxis, crossAxis)
-
                 let nextTile: Tile
-                if let skylineTile,
-                   skylineTile.value == prevTile.value {
+                if let skylineTile, skylineTile.value == prevTile.value {
                     moved = true
-                    tiles.remove(at: skylineTileIndex!)
+                    tiles.remove(at: skylineTileMeta!.index)
 
                     nextTile = Tile(
                         id: prevTile.id,
@@ -102,6 +90,14 @@ struct Game {
 
                     score += skylineTile.value * 2
                 } else {
+                    let nextAxis: Int = if let skylineTileMeta {
+                        skylineTileMeta.axis + 1
+                    } else {
+                        0
+                    }
+
+                    let nextPosition = positionFunc(nextAxis, crossAxis)
+
                     moved = moved || prevTile.position != nextPosition
 
                     nextTile = Tile(
@@ -111,7 +107,7 @@ struct Game {
                     )
                 }
 
-                skylineTileIndex = tiles.count
+                skylineTileMeta = (index: tiles.count, axis: axis)
 
                 tiles.append(nextTile)
             }
@@ -127,29 +123,13 @@ struct Game {
     mutating func move(direction: Direction) -> Tile? {
         switch direction {
         case .up:
-            doMove { (axis, crossAxis) in
-                Position(column: crossAxis, row: axis)
-            } reverse: { position in
-                (position.row, position.column)
-            }
+            doMove { (axis, crossAxis) in Position(column: crossAxis, row: axis) }
         case .down:
-            doMove { (axis, crossAxis) in
-                Position(column: crossAxis, row: 3 - axis)
-            } reverse: { position in
-                (3 - position.row, position.column)
-            }
+            doMove { (axis, crossAxis) in Position(column: crossAxis, row: 3 - axis) }
         case .left:
-            doMove { (axis, crossAxis) in
-                Position(column: axis, row: crossAxis)
-            } reverse: { position in
-                (position.column, position.row)
-            }
+            doMove { (axis, crossAxis) in Position(column: axis, row: crossAxis) }
         case .right:
-            doMove { (axis, crossAxis) in
-                Position(column: 3 - axis, row: crossAxis)
-            } reverse: { position in
-                (3 - position.column, position.row)
-            }
+            doMove { (axis, crossAxis) in Position(column: 3 - axis, row: crossAxis) }
         }
     }
 }
