@@ -22,25 +22,35 @@ struct Game {
 
     mutating func reset() {
         tiles = []
+        score = 0
 
-        var positions = Set<Position>()
-        while tiles.count < 2 {
-            let position = Position(column: Int.random(in: 0..<4), row: Int.random(in: 0..<4))
-            guard !positions.contains(position) else { continue }
+        for _ in 0..<2 {
+            guard let tile = self.newTile(tiles: tiles) else { break }
+            tiles.append(tile)
+        }
+    }
 
-            positions.insert(position)
-            tiles.append(Tile(value: newTileValue(), position: position))
+    private func tile(atPosition position: Position) -> Tile? {
+        tiles.first(where: { $0.position == position })
+    }
+
+    private func newTile(tiles: [Tile]) -> Tile? {
+        var freeSpaces = Set((0..<4).flatMap { column in
+            (0..<4).map { row in
+                Position(column: column, row: row)
+            }
+        })
+
+        for tile in tiles {
+            freeSpaces.remove(tile.position)
         }
 
-        score = 0
-    }
-
-    private func newTileValue() -> Int {
-        Int.random(in: 0..<8) == 0 ? 4 : 2
-    }
-
-    func tile(atPosition position: Position) -> Tile? {
-        tiles.first(where: { $0.position == position })
+        if let position = Array(freeSpaces).shuffled().first {
+            let value = Int.random(in: 0..<8) == 0 ? 4 : 2
+            return Tile(value: value, position: position)
+        } else {
+            return nil
+        }
     }
 
     mutating func append(tile: Tile) {
@@ -53,12 +63,6 @@ struct Game {
     ) -> Tile? {
         var moved = false
         var tiles = [Tile]()
-
-        var freeSpaces = Set((0..<4).flatMap { column in
-            (0..<4).map { row in
-                Position(column: column, row: row)
-            }
-        })
 
         for crossAxis in 0..<4 {
             var skylineTileIndex: Int? = nil
@@ -110,7 +114,6 @@ struct Game {
                 skylineTileIndex = tiles.count
 
                 tiles.append(nextTile)
-                freeSpaces.remove(nextTile.position)
             }
         }
 
@@ -118,11 +121,7 @@ struct Game {
 
         self.tiles = tiles
 
-        if let position = Array(freeSpaces).shuffled().first {
-            return Tile(value: newTileValue(), position: position)
-        } else {
-            return nil
-        }
+        return newTile(tiles: tiles)
     }
 
     mutating func move(direction: Direction) -> Tile? {
