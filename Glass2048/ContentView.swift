@@ -62,7 +62,7 @@ struct Game {
         var tiles = [Tile]()
 
         for crossAxis in 0..<4 {
-            var skylineTileMeta: (index: Int, axis: Int)? = nil
+            var skylineTileMeta: (index: Int, axis: Int, mergable: Bool)? = nil
 
             for axis in 0..<4 {
                 let position = positionFunc(axis, crossAxis)
@@ -71,17 +71,18 @@ struct Game {
                     continue
                 }
 
-                let skylineTile: Tile? = if let skylineTileMeta {
+                let skylineTile: Tile? = if let skylineTileMeta, skylineTileMeta.mergable {
                     tiles[skylineTileMeta.index]
                 } else {
                     nil
                 }
 
                 let nextTile: Tile
+                let mergable: Bool
                 if let skylineTile, skylineTile.value == prevTile.value {
                     moved = true
-                    tiles.remove(at: skylineTileMeta!.index)
 
+                    mergable = false
                     nextTile = Tile(
                         id: prevTile.id,
                         value: skylineTile.value * 2,
@@ -89,6 +90,7 @@ struct Game {
                     )
 
                     score += skylineTile.value * 2
+                    tiles.remove(at: skylineTileMeta!.index)
                 } else {
                     let nextAxis: Int = if let skylineTileMeta {
                         skylineTileMeta.axis + 1
@@ -100,6 +102,7 @@ struct Game {
 
                     moved = moved || prevTile.position != nextPosition
 
+                    mergable = true
                     nextTile = Tile(
                         id: prevTile.id,
                         value: prevTile.value,
@@ -107,7 +110,7 @@ struct Game {
                     )
                 }
 
-                skylineTileMeta = (index: tiles.count, axis: axis)
+                skylineTileMeta = (index: tiles.count, axis: axis, mergable: mergable)
 
                 tiles.append(nextTile)
             }
