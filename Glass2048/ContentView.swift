@@ -62,7 +62,7 @@ struct Game {
         var tiles = [Tile]()
 
         for crossAxis in 0..<4 {
-            var skylineTileMeta: (index: Int, axis: Int, mergable: Bool)? = nil
+            var skyline: (index: Int, axis: Int, mergable: Bool)? = nil
 
             for axis in 0..<4 {
                 let position = positionFunc(axis, crossAxis)
@@ -71,17 +71,17 @@ struct Game {
                     continue
                 }
 
-                let skylineTile: Tile? = if let skylineTileMeta, skylineTileMeta.mergable {
-                    tiles[skylineTileMeta.index]
+                let skylineTile: Tile? = if let skyline, skyline.mergable {
+                    tiles[skyline.index]
                 } else {
                     nil
                 }
 
                 let nextTile: Tile
+                let nextAxis: Int
                 let mergable: Bool
                 if let skylineTile, skylineTile.value == prevTile.value {
-                    moved = true
-
+                    nextAxis = skyline!.axis
                     mergable = false
                     nextTile = Tile(
                         id: prevTile.id,
@@ -89,28 +89,26 @@ struct Game {
                         position: skylineTile.position
                     )
 
+                    moved = true
                     score += skylineTile.value * 2
-                    tiles.remove(at: skylineTileMeta!.index)
+                    tiles.remove(at: skyline!.index)
                 } else {
-                    let nextAxis: Int = if let skylineTileMeta {
-                        skylineTileMeta.axis + 1
+                    nextAxis = if let skyline {
+                        skyline.axis + 1
                     } else {
                         0
                     }
-
-                    let nextPosition = positionFunc(nextAxis, crossAxis)
-
-                    moved = moved || prevTile.position != nextPosition
-
                     mergable = true
                     nextTile = Tile(
                         id: prevTile.id,
                         value: prevTile.value,
-                        position: nextPosition
+                        position: positionFunc(nextAxis, crossAxis)
                     )
+
+                    moved = moved || prevTile.position != nextTile.position
                 }
 
-                skylineTileMeta = (index: tiles.count, axis: axis, mergable: mergable)
+                skyline = (index: tiles.count, axis: nextAxis, mergable: mergable)
 
                 tiles.append(nextTile)
             }
